@@ -20,5 +20,6 @@ int main()
   write(fds[1], "wesley", 6);
   waitpid(pid, NULL, 0);
   close(fds[1]);
+  printf("%d %d\n", fds[0], fds[1]);
   return 0;
 }
