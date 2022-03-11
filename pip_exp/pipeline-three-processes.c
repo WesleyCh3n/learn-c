@@ -29,9 +29,9 @@ report_error_and_exit_helper(const char* message, void (*exit_func)(int)) {
   exit_func(EXIT_FAILURE);
 }
 
-static void report_error_and_exit(const char* message) {
-  report_error_and_exit_helper(message, exit);
-}
+/* static void report_error_and_exit(const char* message) {
+ *   report_error_and_exit_helper(message, exit);
+ * } */
 
 static void _report_error_and_exit(const char* message) {
   report_error_and_exit_helper(message, _exit);
@@ -53,7 +53,7 @@ static void run(char* const argv[], int in, int out) {
   redirect(out, STDOUT_FILENO); /* >&out : child writes to out */
 
   execvp(argv[0], argv);
-  _report_error_and_exit("execvp");
+  /* _report_error_and_exit("execvp"); */
 }
 
 int main(void) {
@@ -65,24 +65,22 @@ int main(void) {
 
   /* run all commands but the last */
   int i = 0, in = STDIN_FILENO; /* the first command reads from stdin */
+  int fd[2]; /* in/out pipe ends */
+  pid_t pid; /* child's pid */
   for ( ; i < (n-1); ++i) {
-    int fd[2]; /* in/out pipe ends */
-    pid_t pid; /* child's pid */
-
-    if (pipe(fd) == -1)
-      report_error_and_exit("pipe");
-    else if ((pid = fork()) == -1)
-      report_error_and_exit("fork");
-    else if (pid == 0) { /* run command[i] in the child process */
+    pipe(fd);
+    /* if (pipe(fd) == -1)
+     *   report_error_and_exit("pipe");
+     * else if ((pid = fork()) == -1)
+     *   report_error_and_exit("fork"); */
+    if ((pid = fork()) == 0) { /* run command[i] in the child process */
       Close(fd[0]); /* close unused read end of the pipe */
       run((char * const*)command[i], in, fd[1]); /* $ command < in > fd[1] */
     }
-    else { /* parent */
-      assert (pid > 0);
-      Close(fd[1]); /* close unused write end of the pipe */
-      Close(in);    /* close unused read end of the previous pipe */
-      in = fd[0]; /* the next command reads from here */
-    }
+    assert (pid > 0);
+    Close(fd[1]); /* close unused write end of the pipe */
+    Close(in);    /* close unused read end of the previous pipe */
+    in = fd[0]; /* the next command reads from here */
   }
   /* run the last command */
   run((char * const*)command[i], in, STDOUT_FILENO); /* $ command < in */
