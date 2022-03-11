@@ -6,7 +6,7 @@ CFLAGS += -m64
 SOURCES =
 HEADERS = $(SOURCES:.c=.h)
 
-PROGRAMS = ./pip_exp.c ./subprocess.c ./pip_process.c
+PROGRAMS = $(wildcard *.c)
 OBJECTS = $(PROGRAMS:.c=.o) $(SOURCES:.c=.o)
 TARGETS = $(PROGRAMS:.c=)
 
