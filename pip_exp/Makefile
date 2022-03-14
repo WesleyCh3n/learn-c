@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -std=gnu99
-CFLAGS += -Wall -Wextra -Werror -pedantic
+CFLAGS += # -Wall -Wextra -Werror -pedantic
 CFLAGS += -m64
 
 SOURCES =

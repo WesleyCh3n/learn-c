@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -10,10 +11,11 @@ void redirect(int old_fd, int new_fd) {
   close(old_fd);
 }
 
-void run(char *const args[], int in, int out) {
+void run(char *const cmd, int in, int out) {
   redirect(in, STDIN_FILENO);
   redirect(out, STDOUT_FILENO);
 
+  char *args[] = {"/bin/sh", "-c", cmd, NULL};
   execvp(args[0], args);
 }
 
@@ -26,28 +28,32 @@ int count_pipe_cmd(char cmd[]) {
   return length;
 }
 
-void parse_pip(char cmd[], char **cmds[]) {
+void parse_pip(char cmd[], char *cmds[]) {
+  /* cmds = malloc(count_pipe_cmd(cmd) * sizeof(char *)); */
   char *p = strtok(cmd, "|");
-  int i = 0;
   while (p != NULL) {
-    printf("%s\n", p);
-    strcpy(*cmds[i], p);
+    /* printf("%s\n", p); */
+    /* cmds[i] = (char *) malloc(strlen(p) * sizeof(char)); */
+    /* strcpy(cmds[i], p); */
     p = strtok(NULL, "|");
-    ++i;
   }
 }
 
 /* int main(int argc, char *argv[]) { */
 int main(void) {
-  char test[] = "echo Hello|grep e";
-  char **test_cmds[count_pipe_cmd(test)];
-  printf("length: %d\n", count_pipe_cmd(test));
-  parse_pip(test, test_cmds);
+  char *test = "echo Hello|grep e";
+  char **test_cmds;
+  /* parse_pip(test, test_cmds); */
+  char *p = strtok(test, "|");
+  while (p != NULL) {
+    printf("%s\n", p);
+    p = strtok(NULL, "|");
+  }
 
-  const char *cmd1[] = {"echo", "Hello 1\nHello 2\nNo 3", NULL};
-  const char *cmd2[] = {"grep", "Hello", NULL};
-  const char *cmd3[] = {"grep", "1", NULL};
-  const char **cmds[] = {cmd1, cmd2, cmd3};
+  const char *cmd1 = "echo \"Hello 1\nHello 2\nNo 3\"";
+  const char *cmd2 = "grep Hello";
+  const char *cmd3 = "grep 1";
+  const char *cmds[] = {cmd1, cmd2, cmd3};
   int n = sizeof(cmds) / sizeof(*cmds);
   printf("# of cmd: %d\n", n);
 
@@ -57,12 +63,12 @@ int main(void) {
   for (int i = 0; i < n - 1; ++i) {
     pipe(fd);
     if ((pids[i] = fork()) == 0) {
-      run((char *const *)cmds[i], in, fd[1]);
+      run((char *)cmds[i], in, fd[1]);
     }
     close(fd[1]);
     in = fd[0];
   }
 
-  run((char *const *)cmds[n - 1], in, STDOUT_FILENO);
+  run((char *)cmds[n - 1], in, STDOUT_FILENO);
   return 0;
 }
