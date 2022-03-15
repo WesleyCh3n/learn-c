@@ -1,21 +1,19 @@
-target = myshell
-
 CC = gcc
 CFLAGS = -std=gnu99
-CFLAGS += -Wall -Wextra -Werror -pedantic
+CFLAGS += # -Wall -Wextra -Werror -pedantic
 CFLAGS += -m64
 
 SOURCES =
 HEADERS = $(SOURCES:.c=.h)
 
-PROGRAMS = ./myshell.c
+PROGRAMS = $(wildcard *.c)
 OBJECTS = $(PROGRAMS:.c=.o) $(SOURCES:.c=.o)
 TARGETS = $(PROGRAMS:.c=)
 
 all: $(TARGETS)
 
 $(TARGETS): $(OBJECTS)
-	$(Q)$(CC) -o $@ $(CFLAGS) $^
+	$(Q)$(CC) -o $@ $(CFLAGS) $(@:=.o)
 
 %.o: %.c
 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
