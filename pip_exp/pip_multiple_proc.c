@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,39 +28,25 @@ int count_pipe_cmd(char cmd[]) {
   return length;
 }
 
-void parse_pip(char cmd[], char *cmds[]) {
-  /* cmds = malloc(count_pipe_cmd(cmd) * sizeof(char *)); */
-  char *p = strtok(cmd, "|");
-  while (p != NULL) {
-    /* printf("%s\n", p); */
-    /* cmds[i] = (char *) malloc(strlen(p) * sizeof(char)); */
-    /* strcpy(cmds[i], p); */
-    p = strtok(NULL, "|");
+char **split_cmds_new(char cmd[], int length) {
+  char **cmds = malloc(length * sizeof(char *));
+  int i = 0;
+  for (char *pt = strtok(cmd, "|"); pt; pt = strtok(NULL, "|"), i++) {
+    cmds[i] = malloc(strlen(pt) * sizeof(char));
+    strcpy(cmds[i], pt);
   }
+  return cmds;
 }
 
-/* int main(int argc, char *argv[]) { */
 int main(void) {
-  char *test = "echo Hello|grep e";
-  char **test_cmds;
-  /* parse_pip(test, test_cmds); */
-  char *p = strtok(test, "|");
-  while (p != NULL) {
-    printf("%s\n", p);
-    p = strtok(NULL, "|");
-  }
-
-  const char *cmd1 = "echo \"Hello 1\nHello 2\nNo 3\"";
-  const char *cmd2 = "grep Hello";
-  const char *cmd3 = "grep 1";
-  const char *cmds[] = {cmd1, cmd2, cmd3};
-  int n = sizeof(cmds) / sizeof(*cmds);
-  printf("# of cmd: %d\n", n);
+  char cmd_raw[] = "echo \"Hello 1\nHello 2\nNo 3\"|grep Hello|grep 1";
+  int len = count_pipe_cmd(cmd_raw);
+  char **cmds = split_cmds_new(cmd_raw, len);
 
   int fd[2];
   int in = STDIN_FILENO;
-  pid_t pids[n];
-  for (int i = 0; i < n - 1; ++i) {
+  pid_t pids[len];
+  for (int i = 0; i < len - 1; ++i) {
     pipe(fd);
     if ((pids[i] = fork()) == 0) {
       run((char *)cmds[i], in, fd[1]);
@@ -68,7 +54,11 @@ int main(void) {
     close(fd[1]);
     in = fd[0];
   }
+  run((char *)cmds[len - 1], in, STDOUT_FILENO);
 
-  run((char *)cmds[n - 1], in, STDOUT_FILENO);
+  /* free cmds new */
+  for (int i = 0; i < len; ++i)
+    free(cmds[i]);
+  free(cmds);
   return 0;
 }
